@@ -91,6 +91,23 @@ app.get('/firebase/lista', function(req, res){
 
 	res.send("OK: " + newPostRef.key);
 });
+app.get('/firebase/trans', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref('server/saving-data/fireblog');
+	var voteRef = ref.child('vote');
+	voteRef.set({
+		votes: {
+			current: '0',
+			name: 'Cambio'
+		}
+	}, function(err){
+		if( err ){
+			res.send(err);
+		}else{
+			res.send('OK');
+		}
+	});
+});
 
 var v1 = require('./v1');
 app.use('/v1', v1);
