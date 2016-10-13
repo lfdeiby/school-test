@@ -16,6 +16,7 @@ app.get('/', function(req, res){
 	res.send("Hola");
 	res.end();
 });
+// SETTERES
 app.post('/token-device', function(req, res){
 	var token = req.body.token;
 	var db = firebase.database();
@@ -25,7 +26,6 @@ app.post('/token-device', function(req, res){
 	});
 	res.send(req.body.token);
 });
-
 app.get('/firebase/set', function(req, res){
 	var db = firebase.database();
 	var ref = db.ref('server/saving-data/fireblog');
@@ -95,11 +95,10 @@ app.get('/firebase/trans', function(req, res){
 	var db = firebase.database();
 	var ref = db.ref('server/saving-data/fireblog');
 	var voteRef = ref.child('vote');
+	/*
 	voteRef.set({
-		votes: {
-			current: '0',
-			name: 'Cambio'
-		}
+		current: 0,
+		name: 'Cambio'
 	}, function(err){
 		if( err ){
 			res.send(err);
@@ -107,6 +106,97 @@ app.get('/firebase/trans', function(req, res){
 			res.send('OK');
 		}
 	});
+	*/
+	
+	var upVoteRef = db.ref('server/saving-data/fireblog/vote/current');
+	upVoteRef.transaction( function(current){
+		return ( current || 0 ) + 1;
+	}, function(err){
+		if( err ){
+			res.send(err);
+		}else{
+			res.send('OK');
+		}
+	});
+});
+// GETTERS
+app.get('/firebase/value', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.on("value", function(snapshot){
+		res.send(snapshot.val());
+	}, function(err){
+		res.send(err);
+	});
+});
+app.get('/firebase/child_added', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.on("child_added", function(snapshot, prevChildKey){
+		var newPost = snapshot.val();
+		res.send(newPost);
+		res.send(prevChildKey);
+	});
+});
+app.get('/firebase/child_changed', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.on("child_changed", function(snapshot){
+		var changedPost = snapshot.val();
+		res.send("the update title: " + changedPost.title);
+	});
+});
+app.get('/firebase/child_removed', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.on("child_removed", function(snapshot){
+		var deletedPost = snapshot.val();
+		res.send("the remove title: " + deletedPost.title);
+	});
+});
+app.get('/firebase/once', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.once("value", function(snapshot){
+		res.send(snapshot.val());
+	}, function(err){
+		res.send(err);
+	});
+});
+app.get('/firebase/orderbychild', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.orderByChild('author').on("child_added", function(snapshot){
+		console.log(snapshot.val());
+		res.send(snapshot.val());
+	}, function(err){
+		res.send(err);
+	});
+});
+app.get('/firebase/orderbykey', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	ref.orderByKey().once("value", function(snapshot){
+		res.send( snapshot.key );
+	}, function(err){
+		res.send(err);
+	});
+});
+app.get('/firebase/play', function(req, res){
+	var db = firebase.database();
+	var ref = db.ref("server/saving-data/fireblog/posts");
+	var data = [];
+	var sync = true;
+    ref.orderByChild('author').on("child_added", function(snapshot){
+		data.push( snapshot.val() );
+		sync = false;
+		console.log(snapshot.val());
+	}, function(err){
+		res.send(err);
+	});
+	require('deasync').loopWhile(function(){ return sync; });
+	// while(sync) {require('deasync').sleep(100);}
+	res.send(data);
 });
 
 var v1 = require('./v1');
@@ -118,6 +208,6 @@ app.all('*', function(req, res){
 });
 
 
-app.listen(80, function(){
-	console.log("runing in port: 80");
+app.listen(8080, function(){
+	console.log("runing in port: 8080");
 })
