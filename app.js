@@ -8,6 +8,22 @@ firebase.initializeApp({
 
 });
 
+var db = firebase.database();
+var ref = db.ref("server/saving-data/fireblog/posts");
+ref.on("child_added", function(snapshot, prevChildKey){
+	var newPost = snapshot.val();
+	console.log(newPost);
+	console.log(prevChildKey);
+	console.log('--------------------------------------');
+});
+ref.on("child_changed", function(snapshot){
+	var changedPost = snapshot.val();
+	console.log("the update title: " + changedPost.title);
+});
+
+
+
+
 var app = express();
 app.use( bodyParser.json() );
 app.use( bodyParser.urlencoded({ extended: true }) )
@@ -80,14 +96,14 @@ app.get('/firebase/lista', function(req, res){
 	//UNICO E IRA ALMACENANDO DE ACRUDO AL ID QUE NO SE REPITE
 	var newPostRef = postsRef.push();
 	newPostRef.set({
-		author: "gracehop",
-		title: "Annoucing COBOL, a new console log"
+		author: "deiby",
+		title: "Laravel in action"
 	});
 	//OTRA MANERA DE AGREGAR A LA LISTA
-	postsRef.push().set({
+	/*postsRef.push().set({
 		author: "deiby",
 		title: "The Turing Machine 2"
-	});
+	});*/
 
 	res.send("OK: " + newPostRef.key);
 });
